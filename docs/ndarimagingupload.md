@@ -71,7 +71,7 @@ import flywheel
 fw = flywheel.Client()
 ​
 #select the Flywheel project you are working on and iterate through all subjects and sessions
-EFProj=fw.projects.find_first('label=EFRO1')
+EFProj=fw.projects.find_first('label=EFR01')
 subs= EFProj.subjects()
 sessions=[]
 for s in subs :
