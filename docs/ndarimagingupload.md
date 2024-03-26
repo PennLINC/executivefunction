@@ -64,7 +64,6 @@ You will also need to get information on the version of dcm2nii used to convert 
 import pandas as pd
 import flywheel
 fw = flywheel.Client()
-​
 EFProj=fw.projects.find_first('label=EFR01') #select the Flywheel project you are working on and iterate through all subjects and sessions
 subs= EFProj.subjects()
 sessions=[]
