@@ -80,10 +80,7 @@ for r in sessions:
       files=a.files
       types=[x.type for x in files]
       for fi in files:
-          if 'T1w' in a.label and 'setter' not in a.label and 'nifti' in fi.type:
-              #print(a.label)
-              #print(fi.name)
-              #print(fi.info.items())
+          if 'T1w' in a.label and 'setter' not in a.label and 'nifti' in fi.type: #for DWI, this would be: # if 'dwi' in a.label and 'nifti' in fi.type
               dcm_info=fi['info'].get('ConversionSoftwareVersion',None)
               versions.append((r.label, 'dcm2niix', dcm_info))
 
@@ -96,47 +93,47 @@ df.to_csv('EF_dcm_version.csv', sep=',')
 
 Finally, use R to read in the image03 template and format the information from Flywheel along with demographics from tableau to NDA specifications. Step through code, paying close attention to values that may need to be changed for specific protocols. Currently, the example included in the code is for BBL ABCD protocols (EF, Motive, etc) but may need to be changed based on specifications included in CAMRIS protocol (ie: TE in line 54, TR in line 51, or lines that assign different values for different scan types (ie: T1 vs T2 scans).  
 ​
-```R 
+In R: 
+
+```R
+
+#begin filling data into the template. most of this information can be found in the CAMRIS protocol or in the json files.
+#note sections where columns are separated into 2 categories for T1 and T2 scans, and whether this will
+#be necessary for the data submitted for your specific protocol.
+
 library(dplyr)
 library(tidyr)
 library(naniar)
 library(car)
 ​
 setwd('~/Desktop/informatics/ndar')
-#import the parsed file information from the bids directory
 nda_scans<-read.csv('nda_scans.csv')
-#import data downloaded from tableau, which includes BBLID, GUID SCAN ID and date of scan
 scan_data<-read.csv('scan_data.csv',header =T, na.strings=c(""))
-#import the image_03 template
-image03_headers<-read.csv('image03_template.csv', header= TRUE, sep=',')
-#import the version #'s of the dcm2niix software, and join 2 columns together
+image03_headers<-read.csv('image03_template.csv', header= TRUE, sep=',') #import the image_03 template
 dcm<- read.csv('EF_dcm_version.csv')
 dcm<- dcm %>% unite('dcm_ver', b:c, remove=FALSE)
 ​
 ​
-# merge BIDS info, dcm_ver and scan data into one sheet
 data<-merge(nda_scans, scan_data, by.x='session', by.y='scanid')
 data<-merge(data, dcm, by.x='session', by.y='a')
-​
-​
-#begin filling data into the template. most of this information can be found in the CAMRIS protocol or in the json files.
-#note sections where columns are separated into 2 categories for T1 and T2 scans, and whether this will
-#be necessary for the data submitted for your specific protocol.
+
 image03<-data.frame(data$guid)
 image03<-image03%>% rename(subjectkey = data.guid)
 image03$src_subject_id<-data$bblid
 image03$interview_date<- data$doscan
 image03$interview_age<- data$scanagemonths
 image03$sex<- data$sex
-#keep Scan ID saved as comments
-image03$comments_misc<- data$session
+
+image03$comments_misc<- data$session #keep Scan ID saved as comments
 image03$image_file<- data$filename
-#using this as a place holder at the moment
-image03$image_thumbnail_file<-""
+
+
+image03$image_thumbnail_file<-"" #using this as a place holder at the moment
 image03$image_description<- "MRI"
 image03$experiment_id<- ""
 image03$scan_type<-data$suffix
-#recode based on NIH dictionary
+
+
 image03$scan_type[ image03$scan_type == 'T1w' ]<-'MR structural (T1)'
 image03$scan_type[ image03$scan_type == 'T2w' ]<-'MR structural (T2)'
 image03$scan_object<- "Live"
@@ -148,22 +145,22 @@ image03$scanner_manufacturer_pd<- "SIEMENS"
 image03$scanner_type_pd<- "MAGNETOM Prisma_fit"
 image03$scanner_software_versions_pd<-'VE11C'
 image03$magnetic_field_strength<-"3T"
-#mri_repetition_time_pd for EF: T1= 2.5, for T2=3.2
-image03$mri_repetition_time_pd[ image03$scan_type == 'MR structural (T1)' ]<-2.5
+
+image03$mri_repetition_time_pd[ image03$scan_type == 'MR structural (T1)' ]<-2.5 #mri_repetition_time_pd for EF: T1= 2.5, for T2=3.2
 image03$mri_repetition_time_pd[ image03$scan_type == 'MR structural (T2)' ]<-3.2
-#mri_echo_time_pd for T1=2.9 ms , for T2= 565 ms
-image03$mri_echo_time_pd[ image03$scan_type == 'MR structural (T1)' ]<-0.0029
+
+image03$mri_echo_time_pd[ image03$scan_type == 'MR structural (T1)' ]<-0.0029 #mri_echo_time_pd for T1=2.9 ms , for T2= 565 ms
 image03$mri_echo_time_pd[ image03$scan_type == 'MR structural (T2)' ]<-0.565
-#flip_angle for T1=8.0 deg, T2=missing?
-image03$flip_angle[ image03$scan_type == 'MR structural (T1)' ]<-'8.0 deg'
+
+image03$flip_angle[ image03$scan_type == 'MR structural (T1)' ]<-'8.0 deg' #flip_angle for T1=8.0 deg, T2=missing?
 image03$flip_angle[ image03$scan_type == 'MR structural (T2)' ]<-'120.0 deg'
-#acquisition_matrix
+
+
 image03$acquisition_matrix<-data$acquisitionmatrix
-#mri_field_of_view_pd	(dim1 x voxelsize1, dim2 x voxelsize2, dim3 x voxelsize3) or the same as acquisition matrix
-image03$mri_field_of_view_pd<-data$acquisitionmatrix
-#patient_position	is L0.0 A20.0 F30.0 mm for both
-image03$patient_position<-'L0.0 A20.0 F30.0 mm'
-#photomet_interpret
+image03$mri_field_of_view_pd<-data$acquisitionmatrix #mri_field_of_view_pd	(dim1 x voxelsize1, dim2 x voxelsize2, dim3 x voxelsize3) or the same as acquisition matrix
+image03$patient_position<-'L0.0 A20.0 F30.0 mm' #patient_position	is L0.0 A20.0 F30.0 mm for both
+
+
 image03$photomet_interpret<- 'grayscale'
 image03$receive_coil<- ''
 image03$transmit_coil<- ''
@@ -209,7 +206,8 @@ image03$study<-''
 image03$week<-''
 image03$experiment_description<-''
 image03$visit<-data$timepoints
-#recode to NIH dictionary
+
+
 image03$visit[ image03$visit == '1' ]<-'baseline'
 image03$visit[ image03$visit == '2' ]<-'followup'
 image03$slice_timing<-''
@@ -219,9 +217,9 @@ image03$bvalfile<-''
 image03$deviceserialnumber<-''
 image03$procdate<-''
 image03$visnum<-data$timepoints
-# there are more fields that need to be calculated, but they are empty (conditional on other modalities)
 ​
 write.csv(image03, file='image03_NDA.csv')
+# there are more fields that need to be calculated, but they are empty (conditional on other modalities)
 
 ```
 
