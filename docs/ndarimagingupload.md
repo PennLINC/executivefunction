@@ -16,6 +16,8 @@ If using data hosted on Flywheel, start by exporting to a cluster or external ha
 ​
 Next, using PyBIDS/NiBABLE parse to parse file names into a CSV file of relevant information (ie: subject and session labels, data type, file name, and other imaging parameters) as follows:
 ​
+Formatting might be off - it is recommended to copy this code into a code block in Slack, then copy it from there and execute it.
+
 ``` R
 pip install bids
 from bids import BIDSLayout
@@ -25,27 +27,21 @@ import pandas as pd
 import nibabel as nb
 import json
 ​
-#set root_dir as the directory where the BIDS directory is saved, and bids_dir to the BIDS directory
-root_dir = '/path/to/directory'
-bids_dir = '/BIDS'
-# make a list of all images in the BIDS directory
-all_files=glob.glob(root_dir + bids_dir + '**/**/**/**/*')
-#filter out jsons, as we only need niftis
-all_niftis=[]
+root_dir = '/path/to/directory' #The folder containing the BIDS directory 
+bids_dir = '/BIDS' #The folder that contains all the subjects 
+all_files=glob.glob(root_dir + bids_dir + '**/**/**/**/*') # make a list of all images in the BIDS directory
+all_niftis=[] #filter out jsons, as we only need niftis
+
 for file in all_files:
-    if 'json' not in file:
+    if '.nii.gz' in file: # and 'dwi' in file - add one more if statement if you want only a specific type of nifti
         all_niftis.append(file)
-#length of list should be the same as # of scans
-print(len(all_niftis))
-​
-#initialize list
-scans = []
-#for each file in the list, parse the information into a dictionary, add the filename + path key value pair, as well as other fields from the NIFTIS and add it to the list we just initialized
+
+print(len(all_niftis)
+
+scans = [] #for each file in the list, parse the information into a dictionary, add the filename + path key value pair, as well as other fields from the NIFTIS and add it to the list we just initialized
 ​
 for file in all_niftis:
     img = img = nb.load(file)
-    #obliquity = np.any(nb.affines.obliquity(img.affine)
-                              #> 1e-4)
     voxel_sizes = img.header.get_zooms()
     matrix_dims = img.shape
     result = parse_file_entities(file)
@@ -57,10 +53,9 @@ for file in all_niftis:
     result["Dim1Size"] = matrix_dims[0]
     result["Dim2Size"] = matrix_dims[1]
     result["Dim3Size"] = matrix_dims[2]
-​
     scans.append(result)
-#and convert to a dataframe and save
-df = pd.DataFrame(scans)  
+
+df = pd.DataFrame(scans) #and convert to a dataframe and save
 df.to_csv('nda_scans.csv', sep=',')
 ```
 You will also need to get information on the version of dcm2nii used to convert each scan. To do this, we can use an SDK script.
@@ -70,23 +65,19 @@ import pandas as pd
 import flywheel
 fw = flywheel.Client()
 ​
-#select the Flywheel project you are working on and iterate through all subjects and sessions
-EFProj=fw.projects.find_first('label=EFR01')
+EFProj=fw.projects.find_first('label=EFR01') #select the Flywheel project you are working on and iterate through all subjects and sessions
 subs= EFProj.subjects()
 sessions=[]
 for s in subs :
     tempsessions=s.sessions()
     sessions.extend(tempsessions)
 ​
-#create a list of tuples containing session ID + dcm_version
-versions=[]
+
+versions=[]  #create a list of tuples containing session ID + dcm_version
 for r in sessions:
-  #print(r.label)
   acq=r.acquisitions()
-  #print(acq)
   for a in acq:
       a = fw.get(a.id)
-      #print(a.info.keys())
       files=a.files
       types=[x.type for x in files]
       for fi in files:
@@ -95,10 +86,11 @@ for r in sessions:
               #print(fi.name)
               #print(fi.info.items())
               dcm_info=fi['info'].get('ConversionSoftwareVersion',None)
-              #dict[r.label]=fi.info.items
               versions.append((r.label, 'dcm2niix', dcm_info))
-#convert to dataframe and save as a .CSV
-df=pd.DataFrame(versions)
+
+
+
+df=pd.DataFrame(versions) #convert to dataframe and save as a .CSV
 df.columns = ['a', 'b', 'c']
 df.to_csv('EF_dcm_version.csv', sep=',')
 ```
