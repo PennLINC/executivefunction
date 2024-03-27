@@ -67,7 +67,7 @@ fw = flywheel.Client()
 EFProj=fw.projects.find_first('label=EFR01') #select the Flywheel project you are working on and iterate through all subjects and sessions
 subs= EFProj.subjects()
 sessions=[]
-for s in subs :
+for s in subs:
     tempsessions=s.sessions()
     sessions.extend(tempsessions)
 ​
@@ -76,11 +76,12 @@ versions=[]  #create a list of tuples containing session ID + dcm_version
 for r in sessions:
   acq=r.acquisitions()
   for a in acq:
+      a = a.reload()
       a = fw.get(a.id)
       files=a.files
       types=[x.type for x in files]
       for fi in files:
-          if 'T1w' in a.label and 'setter' not in a.label and 'nifti' in fi.type: #for DWI, this would be: # if 'dwi' in a.label and 'nifti' in fi.type
+          if 'T1w' in a.label and 'setter' not in a.label and 'nifti' in fi.type: #for DWI, this would be: # if 'dwi' in a.label and 'nifti' in fi.type:
               dcm_info=fi['info'].get('ConversionSoftwareVersion',None)
               versions.append((r.label, 'dcm2niix', dcm_info))
 
