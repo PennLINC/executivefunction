@@ -71,7 +71,6 @@ for s in subs:
     tempsessions=s.sessions()
     sessions.extend(tempsessions)
 ​
-
 versions=[]  #create a list of tuples containing session ID + dcm_version
 for r in sessions:
   acq=r.acquisitions()
@@ -84,8 +83,6 @@ for r in sessions:
           if 'T1w' in a.label and 'setter' not in a.label and 'nifti' in fi.type: #for DWI, this would be: # if 'dwi' in a.label and 'nifti' in fi.type:
               dcm_info=fi['info'].get('ConversionSoftwareVersion',None)
               versions.append((r.label, 'dcm2niix', dcm_info))
-
-
 
 df=pd.DataFrame(versions) #convert to dataframe and save as a .CSV
 df.columns = ['a', 'b', 'c']
