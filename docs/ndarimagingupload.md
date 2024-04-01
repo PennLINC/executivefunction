@@ -118,7 +118,8 @@ library(car)
 ​
 setwd('~/Desktop/informatics/ndar')
 nda_scans<-read.csv('nda_scans.csv')
-scan_data<-read.delim('scan_data.csv',sep="\t",fileEncoding="UTF-16LE")
+scan_data<-read.delim('scan_data.csv',sep="\t",fileEncoding="UTF-16LE") #This is the file from tableau - it should have: bblid	protocol	guid	doscan	scagemonths	scanid	sex  timepoint as columns; this data can be obtained from Oracle
+
 dcm<- read.csv('EF_dcm_version.csv')
 dcm<- dcm %>% unite('dcm_ver', b:c, remove=FALSE)
 data<-merge(nda_scans, scan_data, by.x='session', by.y='scanid')
