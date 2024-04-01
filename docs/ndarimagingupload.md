@@ -102,6 +102,32 @@ df.columns = ['a', 'b', 'c']
 df.to_csv('EF_dcm_version.csv', sep=',')
 ```
 
+> Warning
+> This code has created issues before - sometimes it does not catch all the files. I recommend adding any missing files in manually. You can copy paste the sessions generated from the first code > > block into a column `A` in a .csv called `test`, and then the sessions generated from this code into the column `B`. The code below will help you pull out the missing items.
+
+```
+import pandas as pd
+
+def compare_columns(csv1_path, column1_name, column2_name):
+    # Read CSV files
+    df1 = pd.read_csv(csv1_path,dtype='string')
+    df2 = pd.read_csv(csv1_path,dtype='string')
+    # Extract unique items from each column
+    items1 = set(df1[column1_name])
+    items2 = set(df2[column2_name])
+    print(len(items1))
+    print(len(items2))
+    # Find items in the first column not in the second column
+    difference = items1 - items2
+
+    return list(difference)
+
+diff = (compare_columns('/Users/kahinim/Desktop/test.csv',"A","B"))
+print(len(diff)) # how many items differ?
+df = pd.DataFrame(diff)
+df.to_csv('/Users/kahinim/Desktop/d.csv') # this csv will contain the differences
+```
+
 Now, let's create our `scan_data.csv`. The original `scan_data.csv` is obtained from Tableau with these columns: `bblid	protocol	guid	doscan	scagemonths	scanid	sex `. We can download timepoint data from Oracle itself, going to `procedures`, then `img`, then exporting the data to Excel. Make sure to save this excel spreadsheet later as a .csv, with only the columns `VISITNUM` and `SCANID`. Then use python: 
 
 ```
