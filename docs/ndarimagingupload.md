@@ -18,6 +18,7 @@ Next, using PyBIDS/NiBABLE parse to parse file names into a CSV file of relevant
 ​
 Formatting might be off - it is recommended to copy this code into a code block in Slack, then copy it from there and execute it.
 
+
 ``` R
 pip install bids
 from bids import BIDSLayout
@@ -101,6 +102,20 @@ df.columns = ['a', 'b', 'c']
 df.to_csv('EF_dcm_version.csv', sep=',')
 ```
 
+Now, let's create our `scan_data.csv`. The original `scan_data.csv` is obtained from Tableau with these columns: `bblid	protocol	guid	doscan	scagemonths	scanid	sex `. We can download timepoint data from Oracle itself, going to `procedures`, then `img`, then exporting the data to Excel. Make sure to save this excel spreadsheet later as a .csv, with only the columns `VISITNUM` and `SCANID`. Then use python: 
+
+```
+import pandas as pd
+df1=pd.read_csv('oracle.csv')
+df1=df1.rename(columns={"VISITNUM":"timepoint","SCANID":"scanid"})
+df1=df1.dropna()astype(int)
+df2 = pd.read_csv('scan_data.csv',encoding="utf-16",sep="\t") #from tableau
+df3 = pd.merge(df1,df2,how='right')
+df3.to_csv('scan_data.csv') # overwrite old scan data
+```
+
+
+
 Finally, use R to read in the image03 template and format the information from Flywheel along with demographics from tableau to NDA specifications. Step through code, paying close attention to values that may need to be changed for specific protocols. Currently, the example included in the code is for BBL ABCD protocols (EF, Motive, etc) but may need to be changed based on specifications included in CAMRIS protocol (ie: TE in line 54, TR in line 51, or lines that assign different values for different scan types (ie: T1 vs T2 scans).  
 ​
 In R: 
@@ -118,8 +133,7 @@ library(car)
 ​
 setwd('~/Desktop/informatics/ndar')
 nda_scans<-read.csv('nda_scans.csv')
-scan_data<-read.delim('scan_data.csv',sep="\t",fileEncoding="UTF-16LE") #This is the file from tableau - it should have: bblid	protocol	guid	doscan	scagemonths	scanid	sex  timepoint as columns; this data can be obtained from Oracle
-
+scan_data<-read.csv('scan_data.csv',header =T, skipNul = T,fileEncoding="latin2") 
 dcm<- read.csv('EF_dcm_version.csv')
 dcm<- dcm %>% unite('dcm_ver', b:c, remove=FALSE)
 data<-merge(nda_scans, scan_data, by.x='session', by.y='scanid')
@@ -132,7 +146,7 @@ image03$interview_age<- data$scanagemonths
 image03$sex<- data$sex
 image03$comments_misc<- data$session #keep Scan ID saved as comments
 image03$image_file<- data$filename
-image03$image_thumbnail_file<-"" #using this as a place holder at the moment
+image03$image_thumbnail_file<-"" 
 image03$image_description<- "MRI"
 image03$experiment_id<- ""
 image03$scan_type<-data$suffix
@@ -140,7 +154,7 @@ image03$scan_type[ image03$scan_type == 'T1w' ]<-'MR structural (T1)'
 image03$scan_type[ image03$scan_type == 'T2w' ]<-'MR structural (T2)'
 image03$scan_object<- "Live"
 image03$image_file_format<- "NIFTI"
-image03$data_file2<- ""
+image03$data_file2<-""
 image03$data_file2_type<-""
 image03$image_modality<- "MRI"
 image03$scanner_manufacturer_pd<- "SIEMENS"
@@ -200,16 +214,17 @@ image03$software_preproc<-data$dcm_ver
 image03$study<-''
 image03$week<-''
 image03$experiment_description<-''
-image03$visit<-data$timepoints
+image03$visit<-data$timepoint
 image03$visit[ image03$visit == '1' ]<-'baseline'
 image03$visit[ image03$visit == '2' ]<-'followup'
+image03$visit[ image03$visit == '3' ]<-'followup'
 image03$slice_timing<-''
 image03$bvek_bval_files<-''
 image03$bvecfile<-''
 image03$bvalfile<-''
 image03$deviceserialnumber<-''
 image03$procdate<-''
-image03$visnum<-data$timepoints
+image03$visnum<-data$timepoint
 ​
 write.csv(image03, file='image03_NDA.csv')
 # there are more fields that need to be calculated, but they are empty (conditional on other modalities)
