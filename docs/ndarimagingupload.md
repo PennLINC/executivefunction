@@ -61,30 +61,42 @@ df.to_csv('nda_scans.csv', sep=',')
 You will also need to get information on the version of dcm2nii used to convert each scan. To do this, we can use an SDK script.
 ​
 ```R
+
 import pandas as pd
 import flywheel
-fw = flywheel.Client()
-EFProj=fw.projects.find_first('label=EFR01') #select the Flywheel project you are working on and iterate through all subjects and sessions
-subs= EFProj.subjects()
-sessions=[]
-for s in subs:
-    tempsessions=s.sessions()
-    sessions.extend(tempsessions)
-​
-versions=[]  #create a list of tuples containing session ID + dcm_version
-for r in sessions:
-  acq=r.acquisitions()
-  for a in acq:
-      a = a.reload()
-      a = fw.get(a.id)
-      files=a.files
-      types=[x.type for x in files]
-      for fi in files:
-          if 'T1w' in a.label and 'setter' not in a.label and 'nifti' in fi.type: #for DWI, this would be: # if 'dwi' in a.label and 'nifti' in fi.type:
-              dcm_info=fi['info'].get('ConversionSoftwareVersion',None)
-              versions.append((r.label, 'dcm2niix', dcm_info))
 
-df=pd.DataFrame(versions) #convert to dataframe and save as a .CSV
+
+fw = flywheel.Client()
+EFProj = fw.projects.find_first("label=EFR01")
+sessions = EFProj.sessions()
+
+versions = []  # create a list of tuples containing session ID + dcm_version
+count = 0
+for r in sessions:
+    acq = r.acquisitions()
+    for a in acq:
+        a = a.reload()
+        files = a.files
+        for fi in files:
+            if ( # for T1: if 'T1w' in a.label and 'setter' not in a.label and 'nifti' in fi.type:
+                (
+                    "dwi" in a.label
+                    or "dwi" in fi.name
+                    or "Diffusion" in fi.classification.get("Measurement", [])
+                )
+                and "setter" not in a.label
+                and "nifti" in fi.type
+            ):  # for DWI, this would be: # if 'dwi' in a.label and 'nifti' in fi.type:
+                print(fi.name)
+                print(f"{count=}")
+                count = count + 1
+                dcm_info = fi["info"].get("ConversionSoftwareVersion", None)
+                versions.append((r.label, "dcm2niix", dcm_info))
+
+print(len(versions))
+df = pd.DataFrame(versions)  # convert to dataframe and save as a .CSV
+df.columns = ["a", "b", "c"]
+df.to_csv("EF_dcm_version.csv", sep=",")
 df.columns = ['a', 'b', 'c']
 df.to_csv('EF_dcm_version.csv', sep=',')
 ```
