@@ -118,32 +118,23 @@ library(car)
 ​
 setwd('~/Desktop/informatics/ndar')
 nda_scans<-read.csv('nda_scans.csv')
-scan_data<-read.csv('scan_data.csv',header =T, na.strings=c(""))
-image03_headers<-read.csv('image03_template.csv', header= TRUE, sep=',') #import the image_03 template
+scan_data<-read.delim('scan_data.csv',sep="\t",fileEncoding="UTF-16LE")
 dcm<- read.csv('EF_dcm_version.csv')
 dcm<- dcm %>% unite('dcm_ver', b:c, remove=FALSE)
-​
-​
 data<-merge(nda_scans, scan_data, by.x='session', by.y='scanid')
 data<-merge(data, dcm, by.x='session', by.y='a')
-
 image03<-data.frame(data$guid)
 image03<-image03%>% rename(subjectkey = data.guid)
 image03$src_subject_id<-data$bblid
 image03$interview_date<- data$doscan
 image03$interview_age<- data$scanagemonths
 image03$sex<- data$sex
-
 image03$comments_misc<- data$session #keep Scan ID saved as comments
 image03$image_file<- data$filename
-
-
 image03$image_thumbnail_file<-"" #using this as a place holder at the moment
 image03$image_description<- "MRI"
 image03$experiment_id<- ""
 image03$scan_type<-data$suffix
-
-
 image03$scan_type[ image03$scan_type == 'T1w' ]<-'MR structural (T1)'
 image03$scan_type[ image03$scan_type == 'T2w' ]<-'MR structural (T2)'
 image03$scan_object<- "Live"
@@ -155,22 +146,15 @@ image03$scanner_manufacturer_pd<- "SIEMENS"
 image03$scanner_type_pd<- "MAGNETOM Prisma_fit"
 image03$scanner_software_versions_pd<-'VE11C'
 image03$magnetic_field_strength<-"3T"
-
 image03$mri_repetition_time_pd[ image03$scan_type == 'MR structural (T1)' ]<-2.5 #mri_repetition_time_pd for EF: T1= 2.5, for T2=3.2
 image03$mri_repetition_time_pd[ image03$scan_type == 'MR structural (T2)' ]<-3.2
-
 image03$mri_echo_time_pd[ image03$scan_type == 'MR structural (T1)' ]<-0.0029 #mri_echo_time_pd for T1=2.9 ms , for T2= 565 ms
 image03$mri_echo_time_pd[ image03$scan_type == 'MR structural (T2)' ]<-0.565
-
 image03$flip_angle[ image03$scan_type == 'MR structural (T1)' ]<-'8.0 deg' #flip_angle for T1=8.0 deg, T2=missing?
 image03$flip_angle[ image03$scan_type == 'MR structural (T2)' ]<-'120.0 deg'
-
-
 image03$acquisition_matrix<-data$acquisitionmatrix
 image03$mri_field_of_view_pd<-data$acquisitionmatrix #mri_field_of_view_pd	(dim1 x voxelsize1, dim2 x voxelsize2, dim3 x voxelsize3) or the same as acquisition matrix
 image03$patient_position<-'L0.0 A20.0 F30.0 mm' #patient_position	is L0.0 A20.0 F30.0 mm for both
-
-
 image03$photomet_interpret<- 'grayscale'
 image03$receive_coil<- ''
 image03$transmit_coil<- ''
@@ -216,8 +200,6 @@ image03$study<-''
 image03$week<-''
 image03$experiment_description<-''
 image03$visit<-data$timepoints
-
-
 image03$visit[ image03$visit == '1' ]<-'baseline'
 image03$visit[ image03$visit == '2' ]<-'followup'
 image03$slice_timing<-''
@@ -232,5 +214,6 @@ write.csv(image03, file='image03_NDA.csv')
 # there are more fields that need to be calculated, but they are empty (conditional on other modalities)
 
 ```
+You will need to add the image03.csv template in after this file is generated.
 
 Once you write out the .csv, copy/paste the data into the original template from NIH, and the rest of the fields will generate blank. It is recommended to copy this data into the template downloaded directly from NDA, as the validator is extremely particular, and the headings need to match identically.
