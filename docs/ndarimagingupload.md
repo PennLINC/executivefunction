@@ -122,10 +122,10 @@ def compare_columns(csv1_path, column1_name, column2_name):
 
     return list(difference)
 
-diff = (compare_columns('/Users/kahinim/Desktop/test.csv',"A","B"))
+diff = (compare_columns('~/test.csv',"A","B"))
 print(len(diff)) # how many items differ?
 df = pd.DataFrame(diff)
-df.to_csv('/Users/kahinim/Desktop/d.csv') # this csv will contain the differences
+df.to_csv('~/Desktop/differences.csv') # this csv will contain the differences
 ```
 
 Now, let's create our `scan_data.csv`. The original `scan_data.csv` is obtained from Tableau with these columns: `bblid	protocol	guid	doscan	scagemonths	scanid	sex `. We can download timepoint data from Oracle itself, going to `procedures`, then `img`, then exporting the data to Excel. Make sure to save this excel spreadsheet later as a .csv, with only the columns `VISITNUM` and `SCANID`. Then use python: 
