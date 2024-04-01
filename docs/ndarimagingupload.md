@@ -31,13 +31,13 @@ import json
 root_dir = '/path/to/directory' #The folder containing the BIDS directory 
 bids_dir = '/BIDS' #The folder that contains all the subjects 
 all_files=glob.glob(root_dir + bids_dir + '**/**/**/**/*') # make a list of all images in the BIDS directory
-all_niftis=[] #filter out jsons, as we only need niftis
+all_niftis=[] #filter oaut jsons, as we only need niftis
 
 for file in all_files:
     if '.nii.gz' in file: # and 'dwi' in file - add one more if statement if you want only a specific type of nifti
         all_niftis.append(file)
 
-print(len(all_niftis)
+print(len(all_niftis))
 
 scans = [] #for each file in the list, parse the information into a dictionary, add the filename + path key value pair, as well as other fields from the NIFTIS and add it to the list we just initialized
 ​
@@ -157,7 +157,7 @@ library(tidyr)
 library(naniar)
 library(car)
 ​
-setwd('~/Desktop/informatics/ndar')
+setwd('~/Desktop')
 nda_scans<-read.csv('nda_scans.csv')
 scan_data<-read.csv('scan_data.csv',header =T, skipNul = T,fileEncoding="latin2") 
 dcm<- read.csv('EF_dcm_version.csv')
